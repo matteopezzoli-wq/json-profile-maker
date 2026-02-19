@@ -1,13 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import type { SchemaMap } from "@/types/schema";
+import SchemaUploader from "@/components/SchemaUploader";
+import ConfiguratorApp from "@/components/ConfiguratorApp";
 
 const Index = () => {
+  const [schema, setSchema] = useState<SchemaMap | null>(null);
+  const [fileName, setFileName] = useState("");
+
+  const handleSchemaLoaded = (data: unknown, name: string) => {
+    setSchema(data as SchemaMap);
+    setFileName(name);
+  };
+
+  if (!schema) {
+    return <SchemaUploader onSchemaLoaded={handleSchemaLoaded} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <ConfiguratorApp
+      schema={schema}
+      fileName={fileName}
+      onReset={() => {
+        setSchema(null);
+        setFileName("");
+      }}
+    />
   );
 };
 
