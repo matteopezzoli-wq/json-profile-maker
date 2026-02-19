@@ -1,7 +1,9 @@
+import { useCallback } from "react";
 import type { PayloadDefinition, FieldDefinition } from "@/types/schema";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -12,6 +14,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Plus, Trash2 } from "lucide-react";
 
 interface Props {
   payloadKey: string;
@@ -20,6 +23,195 @@ interface Props {
   onChange: (key: string, field: string, value: unknown) => void;
 }
 
+/* ── Array of strings ── */
+const ArrayOfStringsInput = ({
+  value,
+  onValueChange,
+  itemLabel,
+}: {
+  value: unknown;
+  onValueChange: (val: unknown) => void;
+  itemLabel: string;
+}) => {
+  const items = Array.isArray(value) ? (value as string[]) : [];
+
+  const update = (index: number, v: string) => {
+    const next = [...items];
+    next[index] = v;
+    onValueChange(next);
+  };
+  const add = () => onValueChange([...items, ""]);
+  const remove = (index: number) => {
+    const next = items.filter((_, i) => i !== index);
+    onValueChange(next.length > 0 ? next : undefined);
+  };
+
+  return (
+    <div className="space-y-2">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <Input
+            value={item}
+            onChange={(e) => update(i, e.target.value)}
+            placeholder={`${itemLabel} ${i + 1}`}
+            className="h-9 flex-1"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+            onClick={() => remove(i)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="gap-1.5 text-xs"
+        onClick={add}
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Aggiungi
+      </Button>
+    </div>
+  );
+};
+
+/* ── Array of dictionaries ── */
+const ArrayOfDictsInput = ({
+  value,
+  onValueChange,
+  subkeys,
+}: {
+  value: unknown;
+  onValueChange: (val: unknown) => void;
+  subkeys: Record<string, FieldDefinition>;
+}) => {
+  // Determine fields inside the dictionary from the subkeys' own subkeys or keep it as free-form key/value
+  // Most dict subkeys don't specify inner fields, so we offer a free-form key/value editor
+  const items = Array.isArray(value)
+    ? (value as Record<string, string>[])
+    : [];
+
+  const add = () => onValueChange([...items, {}]);
+  const remove = (index: number) => {
+    const next = items.filter((_, i) => i !== index);
+    onValueChange(next.length > 0 ? next : undefined);
+  };
+
+  const updateField = (index: number, key: string, val: string) => {
+    const next = [...items];
+    next[index] = { ...next[index], [key]: val };
+    onValueChange(next);
+  };
+
+  const addField = (index: number) => {
+    const next = [...items];
+    const existing = Object.keys(next[index] || {});
+    const newKey = `key${existing.length + 1}`;
+    next[index] = { ...next[index], [newKey]: "" };
+    onValueChange(next);
+  };
+
+  const removeField = (index: number, key: string) => {
+    const next = [...items];
+    const copy = { ...next[index] };
+    delete copy[key];
+    next[index] = copy;
+    onValueChange(next);
+  };
+
+  const renameField = (index: number, oldKey: string, newKey: string) => {
+    if (oldKey === newKey) return;
+    const next = [...items];
+    const copy = { ...next[index] };
+    copy[newKey] = copy[oldKey];
+    delete copy[oldKey];
+    next[index] = copy;
+    onValueChange(next);
+  };
+
+  // Get the first subkey description
+  const subkeyEntry = Object.values(subkeys)[0];
+  const dictLabel = subkeyEntry?.description || "Elemento";
+
+  return (
+    <div className="space-y-3">
+      {items.map((item, i) => (
+        <div
+          key={i}
+          className="rounded-lg border border-border bg-background p-3 space-y-2"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              {dictLabel} {i + 1}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-destructive hover:text-destructive"
+              onClick={() => remove(i)}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+          {Object.entries(item).map(([key, val]) => (
+            <div key={key} className="flex items-center gap-2">
+              <Input
+                value={key}
+                onChange={(e) => renameField(i, key, e.target.value)}
+                className="h-8 w-32 shrink-0 font-mono text-xs"
+                placeholder="chiave"
+              />
+              <Input
+                value={val}
+                onChange={(e) => updateField(i, key, e.target.value)}
+                className="h-8 flex-1 text-xs"
+                placeholder="valore"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0 text-muted-foreground"
+                onClick={() => removeField(i, key)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-xs text-muted-foreground"
+            onClick={() => addField(i)}
+          >
+            <Plus className="h-3 w-3" />
+            Aggiungi campo
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="gap-1.5 text-xs"
+        onClick={add}
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Aggiungi elemento
+      </Button>
+    </div>
+  );
+};
+
+/* ── Single field input ── */
 const FieldInput = ({
   name,
   field,
@@ -49,6 +241,28 @@ const FieldInput = ({
           ))}
         </SelectContent>
       </Select>
+    );
+  }
+
+  // Array type
+  if (field.type === "array" && field.subkeys) {
+    const firstSubkey = Object.values(field.subkeys)[0];
+    if (firstSubkey?.type === "string") {
+      return (
+        <ArrayOfStringsInput
+          value={value}
+          onValueChange={onValueChange}
+          itemLabel={name}
+        />
+      );
+    }
+    // dictionary or other complex subkeys
+    return (
+      <ArrayOfDictsInput
+        value={value}
+        onValueChange={onValueChange}
+        subkeys={field.subkeys}
+      />
     );
   }
 
