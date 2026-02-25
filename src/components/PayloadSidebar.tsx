@@ -83,7 +83,7 @@ const PayloadSidebar = ({
             return (
               <div key={key}>
                 <div
-                  className={`group flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                  className={`group flex cursor-pointer items-center rounded-lg px-3 py-2 text-sm transition-colors ${
                     isSelected && !isMulti
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : isSelected && isMulti
@@ -109,7 +109,7 @@ const PayloadSidebar = ({
                         onSelectPayload(key, 0);
                       }
                     }}
-                    className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-colors ${
+                    className={`mr-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-colors ${
                       isActive
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-card"
@@ -120,12 +120,10 @@ const PayloadSidebar = ({
                       <Plus className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                     )}
                   </button>
-                  <span className="truncate flex-1">{val.displayName}</span>
+                  <span className="min-w-0 flex-1 truncate">{val.displayName}</span>
                   {isActive && isMulti && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+                    <button
+                      className="ml-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
                       onClick={(e) => {
                         e.stopPropagation();
                         onAddInstance(key);
@@ -133,7 +131,7 @@ const PayloadSidebar = ({
                       title="Aggiungi configurazione"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                    </Button>
+                    </button>
                   )}
                 </div>
 
