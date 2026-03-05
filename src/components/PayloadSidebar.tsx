@@ -3,7 +3,6 @@ import { useState, useMemo } from "react";
 import type { SchemaMap } from "@/types/schema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 
 interface Props {
   schema: SchemaMap;
@@ -36,7 +35,6 @@ const PayloadSidebar = ({
 }: Props) => {
   const [search, setSearch] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState<string>("iOS");
-  const [supervisedOnly, setSupervisedOnly] = useState(false);
 
   const filtered = useMemo(() => {
     const entries = Object.entries(schema);
@@ -55,18 +53,9 @@ const PayloadSidebar = ({
           return false;
         }
       }
-      // Supervised filter
-      if (supervisedOnly) {
-        const platformInfo = selectedPlatform
-          ? Object.entries(val.platforms || {}).find(([p]) => p.toLowerCase() === selectedPlatform.toLowerCase())?.[1]
-          : Object.values(val.platforms || {})[0];
-        if (!platformInfo?.supervised) {
-          return false;
-        }
-      }
       return true;
     });
-  }, [schema, search, selectedPlatform, supervisedOnly]);
+  }, [schema, search, selectedPlatform]);
 
   return (
     <div className="flex h-full w-72 flex-col border-r border-border bg-card">
@@ -96,18 +85,6 @@ const PayloadSidebar = ({
             </button>
           ))}
         </div>
-        {/* Supervised filter */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <Shield className="h-3 w-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-medium">Solo Supervised</span>
-          </div>
-          <Switch
-            checked={supervisedOnly}
-            onCheckedChange={setSupervisedOnly}
-            className="scale-75"
-          />
-        </div>
       </div>
       <div className="flex-1 overflow-y-auto">
         <div className="p-1.5">
@@ -132,6 +109,10 @@ const PayloadSidebar = ({
             const isMulti = multiSet.has(key);
             const instances = payloadValues[key] || [];
             const instanceCount = instances.length;
+            const platformInfo = selectedPlatform
+              ? Object.entries(val.platforms || {}).find(([p]) => p.toLowerCase() === selectedPlatform.toLowerCase())?.[1]
+              : Object.values(val.platforms || {})[0];
+            const isSupervised = platformInfo?.supervised === true;
 
             return (
               <div key={key}>
@@ -174,6 +155,9 @@ const PayloadSidebar = ({
                     )}
                   </button>
                   <span className="min-w-0 flex-1 truncate text-xs">{val.displayName}</span>
+                  {isSupervised && (
+                    <Shield className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  )}
                   {isActive && isMulti && (
                     <button
                       className={`ml-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-xs ${
