@@ -26,11 +26,22 @@ const SchemaUploader = ({ onSchemaLoaded }: Props) => {
         fetchUrl = `https://drive.google.com/uc?export=download&id=${gdriveMatch[1]}`;
       }
 
-      // Use CORS proxy to bypass cross-origin restrictions
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(fetchUrl)}`;
+      // Try multiple CORS proxies as fallback
+      const proxies = [
+        (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+        (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+        (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+      ];
 
-      const res = await fetch(proxyUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      let res: Response | null = null;
+      for (const proxy of proxies) {
+        try {
+          res = await fetch(proxy(fetchUrl));
+          if (res.ok) break;
+        } catch {
+          continue;
+        }
+      }
       const text = await res.text();
       const json = JSON.parse(text);
       const name = url.trim().split("/").pop()?.split("?")[0] || "schema.json";
